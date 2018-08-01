@@ -38,6 +38,20 @@ def describe_discrepancy(fields_group, rules_descriptions, hints, x):
 
     return msg, features
 
+
+def describe_discrepancy2(fields_group, rules_descriptions, hints, x):
+    expanded = expand_hints(fields_group, hints)
+
+    field_ids, values, features = zip(*((field_id, x[field_id],
+                                         rules_descriptions[type(x[field_id])][feature_id])
+                                        for field_id, feature_id in expanded))
+
+    my_dict = {}
+    for i in range(len(field_ids)):
+        my_dict[field_ids[i]] = values[i]
+
+    return my_dict
+
 def print_rows(outliers, model, hints, rules_descriptions, verbosity = 0, max_w = 40, header = "   "):
     if len(outliers) == 0:
         return
@@ -60,22 +74,13 @@ def print_rows(outliers, model, hints, rules_descriptions, verbosity = 0, max_w 
         colorized_x = colorize(truncated_x, highlight)
         colorized_x = " ".join(f + " " * p for f, p in zip(colorized_x, padding))
 
-        if verbosity < 0:
-            sys.stdout.write(str(linum) + "\n")
-        else:
-            sys.stdout.write(header + colorized_x + "\n")
+        mydict = {}
+        for fields_group in discrepancies:
+            mydict.update(describe_discrepancy2(fields_group,rules_descriptions,hints, x))
 
-            if verbosity > 0:
-                for fields_group in discrepancies:
-                    msg, features_desc = describe_discrepancy(fields_group,
-                                                              rules_descriptions,
-                                                              hints, x)
-                    sys.stdout.write(msg + "\n")
+        for key, value in mydict.items():
+            print(str(linum) + "|" + str(key) + "|"+ str(value))
 
-                    if verbosity > 1:
-                        model.more_info(fields_group, features_desc, X, "     ")
-
-                sys.stdout.write("\n")
 
 def colorize(row, indices):
     row = [str(f) for f in row]
